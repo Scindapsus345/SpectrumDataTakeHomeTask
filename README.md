@@ -5,24 +5,29 @@
 
 ## Запуск
 
-Требуются Python 3.12, [uv](https://docs.astral.sh/uv/) и Docker.
+Для запуска сервиса требуется только Docker с Compose:
 
 ```bash
-uv sync --frozen --group dev
 docker compose up --build
 ```
 
 Swagger: <http://localhost:8000/docs>. Конфигурация читается из переменных
 `PAGE_CRAWLER_*`; полный локальный пример находится в `.env.example`.
 
-Запуск приложения без Docker:
+Запуск приложения локально требует Python 3.12 и
+[uv](https://docs.astral.sh/uv/). PostgreSQL по-прежнему можно поднять через
+Compose:
 
 ```bash
 docker compose up -d postgres
+uv sync --frozen --group dev
+uv run alembic upgrade head
 uv run python -m page_crawler
 ```
 
-При старте приложение идемпотентно применяет `schema.sql`.
+Docker-контейнер выполняет `alembic upgrade head` перед запуском приложения.
+При локальном запуске миграцию нужно применять отдельной командой, как показано
+выше.
 
 ## API
 
@@ -69,7 +74,9 @@ requests. Он не блокирует private/localhost URL и не прове�
 При отсутствии объявленной кодировки HTML читается как UTF-8, а недекодируемые
 байты заменяются; автоматического определения legacy-кодировок нет.
 
-Старая многотабличная схема автоматически не мигрируется. Compose использует
-новый volume; для внешней БД нужна пустая схема `public`.
+База данных управляется миграциями Alembic. Для БД, ранее созданной через
+`schema.sql`, перед `alembic stamp 20260918_01` нужно проверить, что таблица и
+индексы полностью соответствуют начальной миграции. Для новой установки нужна
+пустая схема `public`.
 
 Причины и границы упрощения зафиксированы в `SPEC_SIMPLIFY.md`.

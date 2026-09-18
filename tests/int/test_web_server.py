@@ -21,7 +21,6 @@ async def test_post_status_list_content_and_openapi(pg_pool: object) -> None:
     await remote.start_server()
 
     storage = PageStorage(pg_pool)  # type: ignore[arg-type]
-    await storage.apply_schema()
     async with ClientSession(fallback_charset_resolver=fallback_charset_resolver) as session:
         crawler = Crawler(session, storage, CrawlerSettings(), PageFetcherSettings())
         crawler.start_workers()

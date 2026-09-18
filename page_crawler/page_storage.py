@@ -1,10 +1,7 @@
 from datetime import datetime
-from pathlib import Path
 
 from asyncpg import Pool  # type: ignore[import-untyped]
 from pydantic import BaseModel, ConfigDict
-
-SCHEMA_SQL_FILE_NAME = "schema.sql"
 
 UPSERT_PAGE = """
 INSERT INTO pages (url, title, html)
@@ -48,12 +45,6 @@ def _literal_pattern(value: str | None) -> str | None:
 class PageStorage:
     def __init__(self, pool: Pool) -> None:
         self._pool = pool
-
-    async def apply_schema(self) -> None:
-        schema_path = Path(__file__).with_name(SCHEMA_SQL_FILE_NAME)
-        if not schema_path.exists():
-            schema_path = Path(SCHEMA_SQL_FILE_NAME)
-        await self._pool.execute(schema_path.read_text(encoding="utf-8"))
 
     async def upsert(self, url: str, title: str | None, html: str) -> None:
         await self._pool.execute(UPSERT_PAGE, url, title, html)

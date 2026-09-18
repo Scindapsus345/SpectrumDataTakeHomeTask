@@ -30,7 +30,6 @@ class Runner:
                 fallback_charset_resolver=fallback_charset_resolver,
             )
             storage = PageStorage(pool)
-            await storage.apply_schema()
             crawler = Crawler(
                 client_session,
                 storage,

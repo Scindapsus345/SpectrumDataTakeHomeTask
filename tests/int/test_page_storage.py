@@ -3,7 +3,6 @@ from page_crawler.page_storage import PageStorage
 
 async def test_storage_upsert_search_and_content(pg_pool: object) -> None:
     storage = PageStorage(pg_pool)  # type: ignore[arg-type]
-    await storage.apply_schema()
     await storage.upsert("https://example.org/a%25_", "Old", "<p>old</p>")
     await storage.upsert("https://example.org/a%25_", "New title", "<p>new</p>")
     await storage.upsert("https://example.org/other", "Other", "<p>other</p>")
