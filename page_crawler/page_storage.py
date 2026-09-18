@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from asyncpg import Pool  # type: ignore[import-untyped]
+from pydantic import BaseModel, ConfigDict
 
 SCHEMA_SQL_FILE_NAME = "schema.sql"
 
@@ -23,14 +23,16 @@ LIMIT $3 OFFSET $4
 GET_CONTENT = "SELECT url, title, html, fetched_at FROM pages WHERE url = $1"
 
 
-@dataclass(frozen=True, slots=True)
-class PageSummary:
+class PageSummary(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     url: str
     title: str | None
 
 
-@dataclass(frozen=True, slots=True)
-class StoredPage:
+class StoredPage(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     url: str
     title: str | None
     html: str
@@ -71,7 +73,7 @@ class PageStorage:
             offset,
         )
         return (
-            [PageSummary(str(row["url"]), row["title"]) for row in rows[:limit]],
+            [PageSummary(url=str(row["url"]), title=row["title"]) for row in rows[:limit]],
             len(rows) > limit,
         )
 

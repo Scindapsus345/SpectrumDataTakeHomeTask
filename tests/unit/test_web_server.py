@@ -13,30 +13,27 @@ class FakeCrawler:
     def __init__(self) -> None:
         now = datetime.now(UTC)
         self.state = CrawlState(
-            UUID(int=1),
-            "queued",
-            "https://example.org/",
-            None,
-            1,
-            2,
-            1000,
-            None,
-            1,
-            0,
-            0,
-            0,
-            False,
-            None,
-            now,
-            None,
-            None,
+            crawl_id=UUID(int=1),
+            status="queued",
+            root_url="https://example.org/",
+            effective_root_url=None,
+            max_depth=1,
+            max_concurrency=2,
+            current_depth=None,
+            discovered=1,
+            processed=0,
+            saved=0,
+            failed=0,
+            error=None,
+            created_at=now,
+            started_at=None,
+            finished_at=None,
         )
 
-    def start(self, root_url: str, depth: int, concurrency: int, pages: int) -> CrawlState:
+    def start(self, root_url: str, depth: int, concurrency: int) -> CrawlState:
         self.state.root_url = root_url
         self.state.max_depth = depth
         self.state.max_concurrency = concurrency
-        self.state.max_pages = pages
         return self.state
 
     def get(self, crawl_id: UUID) -> CrawlState | None:
@@ -47,12 +44,17 @@ class FakeStorage:
     async def search(
         self, url_query: str | None, title_query: str | None, limit: int, offset: int
     ) -> tuple[list[PageSummary], bool]:
-        return [PageSummary("https://example.org/", "Example")], False
+        return [PageSummary(url="https://example.org/", title="Example")], False
 
     async def get_content(self, url: str) -> StoredPage | None:
         if url != "https://example.org/":
             return None
-        return StoredPage(url, "Example", "<title>Example</title>", datetime.now(UTC))
+        return StoredPage(
+            url=url,
+            title="Example",
+            html="<title>Example</title>",
+            fetched_at=datetime.now(UTC),
+        )
 
 
 async def test_core_http_contract() -> None:
@@ -67,6 +69,8 @@ async def test_core_http_contract() -> None:
         )
         assert created.status_code == 202
         assert created.headers["Location"].endswith("00000000-0000-0000-0000-000000000001")
+        assert "max_pages" not in created.json()
+        assert "truncated" not in created.json()
 
         assert (await client.get(created.headers["Location"])).json()["status"] == "queued"
         assert (await client.get("/api/v1/pages")).status_code == 200
@@ -78,6 +82,17 @@ async def test_core_http_contract() -> None:
         assert len((await client.get("/openapi.json")).json()["paths"]) == 4
         assert (await client.get("/docs")).status_code == 200
         assert (await client.post("/api/v1/crawls", json={})).status_code == 422
+        assert (
+            await client.post(
+                "/api/v1/crawls",
+                json={
+                    "root_url": "https://example.org",
+                    "max_depth": 1,
+                    "max_concurrency": 2,
+                    "max_pages": 1,
+                },
+            )
+        ).status_code == 422
         assert (await client.get("/api/v1/crawls/not-a-uuid")).status_code == 422
         malformed = await client.post(
             "/api/v1/crawls",

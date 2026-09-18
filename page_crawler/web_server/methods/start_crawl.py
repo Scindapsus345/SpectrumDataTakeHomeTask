@@ -16,7 +16,6 @@ class StartCrawlRequest(BaseModel):
     root_url: str = Field(min_length=1, max_length=4096)
     max_depth: Annotated[StrictInt, Field(ge=0, le=10)]
     max_concurrency: Annotated[StrictInt, Field(ge=1, le=50)]
-    max_pages: Annotated[StrictInt, Field(ge=1, le=10_000)] = 1000
 
 
 @router.post(
@@ -36,7 +35,6 @@ async def start_crawl(
             data.root_url,
             data.max_depth,
             data.max_concurrency,
-            data.max_pages,
         )
     except ValueError as exc:
         return error_response(422, "validation_error", str(exc))

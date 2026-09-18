@@ -33,11 +33,11 @@ def test_extracts_title_base_and_unique_same_origin_links() -> None:
         "https://example.org/two",
     )
 
-    limited = extract(
+    without_links = extract(
         '<title>x</title><a href="/seen">seen</a><a href="/one">1</a>'
         '<a href="/two">2</a><a href="/three">3</a>',
         "https://example.org/root",
-        excluded_links={"https://example.org/seen"},
-        link_limit=2,
+        include_links=False,
     )
-    assert limited.links == ("https://example.org/one", "https://example.org/two")
+    assert without_links.title == "x"
+    assert without_links.links == ()

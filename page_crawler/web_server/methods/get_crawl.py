@@ -26,9 +26,7 @@ class CrawlResponse(BaseModel):
     effective_root_url: str | None
     max_depth: int
     max_concurrency: int
-    max_pages: int
     progress: CrawlProgress
-    truncated: bool
     error: str | None
     created_at: datetime
     started_at: datetime | None

@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-
 from aiohttp import ClientResponse, ClientSession
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 CHUNK_SIZE = 64 * 1024
 
@@ -12,8 +10,9 @@ class PageFetcherSettings(BaseModel):
     user_agent: str = "page-crawler/1.0"
 
 
-@dataclass(frozen=True, slots=True)
-class FetchedPage:
+class FetchedPage(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     final_url: str
     html: str
 
@@ -37,7 +36,10 @@ async def fetch_page(
         validate_response_headers(response, settings)
         raw = await get_body(response, settings)
         encoding = response.charset or fallback_charset_resolver(response, raw)
-        return FetchedPage(str(response.url), raw.decode(encoding, errors="replace"))
+        return FetchedPage(
+            final_url=str(response.url),
+            html=raw.decode(encoding, errors="replace"),
+        )
 
 
 async def get_body(response: ClientResponse, settings: PageFetcherSettings) -> bytes:
